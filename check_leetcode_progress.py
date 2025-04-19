@@ -40,7 +40,7 @@ def check_leetcode_progress():
         goal_end_date = user_data["goal"][1]
         daily_goal = user_data["goal"][0]
 
-        if today <= goal_end_date:
+        if today < goal_end_date:
             # Goal is active, check LeetCode progress
             lc_id = user_data["lc_id"]
             previous_solved = user_data["solved"]
@@ -66,6 +66,37 @@ def check_leetcode_progress():
 
                 # Update the solved count in the database
                 db[username]["solved"] = current_solved
+
+            except Exception as e:
+                print(f"Error checking progress for {username}: {e}")
+        elif today == goal_end_date:
+            # Today is the last day of the goal, set goal to empty array
+            lc_id = user_data["lc_id"]
+            previous_solved = user_data["solved"]
+
+            try:
+                # Make request to LeetCode API
+                response = requests.get(
+                    f"https://alfa-leetcode-api.onrender.com/{lc_id}/solved"
+                )
+                response.raise_for_status()
+                data = response.json()
+
+                current_solved = data["solvedProblem"]
+
+                # Update the solved count in the database
+                problems_solved_since_last_check = current_solved - previous_solved
+
+                if problems_solved_since_last_check < daily_goal:
+                    # User hasn't met their goal
+                    users_to_tag.append(
+                        (username, daily_goal, problems_solved_since_last_check)
+                    )
+
+                # Update the solved count in the database
+                db[username]["solved"] = current_solved
+                # Set goal to empty array
+                db[username]["goal"] = []
 
             except Exception as e:
                 print(f"Error checking progress for {username}: {e}")

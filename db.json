@@ -1,10 +1,12 @@
 {
     "spycrab.db": {
         "lc_id": "yangavin",
-        "goal": [
-            2,
-            "2025-04-25"
-        ],
+        "goal": [],
         "solved": 25
+    },
+    "evanferreira": {
+        "lc_id": "EvanFerreira",
+        "goal": [],
+        "solved": 9
     }
 }

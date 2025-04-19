@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord import app_commands
 from dotenv import load_dotenv
 import os
 import json
@@ -55,6 +56,12 @@ async def get_goal(interaction: discord.Interaction):
         )
         return
 
+    if "goal" not in db[user_name] or not db[user_name]["goal"]:
+        await interaction.response.send_message(
+            "You don't have any on-going goals. Use /setgoal to set one!"
+        )
+        return
+
     user_goal = db[user_name]["goal"]
     leetcode_is_one = user_goal[0] == 1
 
@@ -64,12 +71,29 @@ async def get_goal(interaction: discord.Interaction):
 
 
 @bot.tree.command(name="setgoal", description="Set your goal")
-async def set_goal(interaction: discord.Interaction, leetcode: int, days: int):
+async def set_goal(
+    interaction: discord.Interaction,
+    leetcode: app_commands.Range[int, 1, None],
+    days: int,
+):
     db = get_db()
     user_name = f"{interaction.user.name}"
 
     # Calculate the end date
-    end_date = (datetime.now() + timedelta(days=days)).strftime("%Y-%m-%d")
+    end_date_dt = datetime.now() + timedelta(days=days)
+    end_date = end_date_dt.strftime("%Y-%m-%d")
+
+    # Check if user already has a goal and if new end date is earlier
+    if (
+        user_name in db and "goal" in db[user_name] and db[user_name]["goal"]
+    ):  # Only validate if goal exists and is not empty
+        current_end_date = db[user_name]["goal"][1]
+        current_end_date_dt = datetime.strptime(current_end_date, "%Y-%m-%d")
+        if end_date_dt < current_end_date_dt:
+            await interaction.response.send_message(
+                f"nice try, you cannot change your goal to end earlier than {current_end_date}"
+            )
+            return
 
     # Create user entry if doesn't exist
     if user_name not in db:
