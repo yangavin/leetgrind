@@ -72,11 +72,12 @@ def check_leetcode(update_db: bool):
             fetched_user_data: UserStats = response.json()
 
             if update_db:
-                db[username]["easySolved"] = fetched_user_data["easySolved"]
-                db[username]["mediumSolved"] = fetched_user_data["mediumSolved"]
-                db[username]["hardSolved"] = fetched_user_data["hardSolved"]
-                db[username]["points"] = calculate_points(fetched_user_data)
-                save_db(db)
+                temp = db.copy()
+                temp[username]["easySolved"] = fetched_user_data["easySolved"]
+                temp[username]["mediumSolved"] = fetched_user_data["mediumSolved"]
+                temp[username]["hardSolved"] = fetched_user_data["hardSolved"]
+                temp[username]["points"] = calculate_points(fetched_user_data)
+                save_db(temp)
 
             # Check if goal is not active
             if not db_user_data["goal"] or len(db_user_data["goal"]) < 2:
