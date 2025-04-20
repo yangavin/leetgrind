@@ -37,6 +37,10 @@ def check_leetcode_progress():
             continue
 
         # Check if goal is active
+        if not user_data["goal"] or len(user_data["goal"]) < 2:
+            # Skip users with empty or incomplete goal lists
+            continue
+
         goal_end_date = user_data["goal"][1]
         daily_goal = user_data["goal"][0]
 
