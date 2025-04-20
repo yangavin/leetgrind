@@ -14,6 +14,7 @@ intents.members = True  # Need members intent to look up members by name
 bot = commands.Bot(command_prefix="!", intents=intents)
 TOKEN = os.getenv("DISCORD_TOKEN")
 CHANNEL_ID = int(os.getenv("CHANNEL_ID", "0"))  # Channel to send reminders
+LEETCODE_API_URL = os.getenv("LEETCODE_API_URL")
 
 
 def get_db():
@@ -51,9 +52,7 @@ def check_leetcode_progress():
 
             try:
                 # Make request to LeetCode API
-                response = requests.get(
-                    f"https://alfa-leetcode-api.onrender.com/{lc_id}/solved"
-                )
+                response = requests.get(f"{LEETCODE_API_URL}/{lc_id}/solved")
                 response.raise_for_status()
                 data = response.json()
 
@@ -80,9 +79,7 @@ def check_leetcode_progress():
 
             try:
                 # Make request to LeetCode API
-                response = requests.get(
-                    f"https://alfa-leetcode-api.onrender.com/{lc_id}/solved"
-                )
+                response = requests.get(f"{LEETCODE_API_URL}/{lc_id}/solved")
                 response.raise_for_status()
                 data = response.json()
 
