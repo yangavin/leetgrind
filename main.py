@@ -63,17 +63,17 @@ async def get_goal(interaction: discord.Interaction):
         return
 
     user_goal = db[user_name]["goal"]
-    leetcode_is_one = user_goal[0] == 1
+    points_is_one = user_goal[0] == 1
 
     await interaction.response.send_message(
-        f"Your current goal is {user_goal[0]} daily leetcode{'' if leetcode_is_one else 's'} until {user_goal[1]}"
+        f"Your current goal is {user_goal[0]} point{'' if points_is_one else 's'} until {user_goal[1]}"
     )
 
 
 @bot.tree.command(name="setgoal", description="Set your goal")
 async def set_goal(
     interaction: discord.Interaction,
-    leetcode: app_commands.Range[int, 1, None],
+    points: app_commands.Range[int, 1, None],
     days: int,
 ):
     db = get_db()
@@ -100,15 +100,37 @@ async def set_goal(
         db[user_name] = {}
 
     # Set the goal
-    db[user_name]["goal"] = [leetcode, end_date]
+    db[user_name]["goal"] = [points, end_date]
 
     # Save the updated database
     save_db(db)
 
-    leetcode_is_one = leetcode == 1
+    points_is_one = points == 1
     await interaction.response.send_message(
-        f"Goal set! You are to complete {leetcode} daily leetcode{'' if leetcode_is_one else 's'} until {end_date}"
+        f"Goal set! You are to gain {points} point{'' if points_is_one else 's'} daily until {end_date}"
     )
+
+
+@bot.tree.command(
+    name="help", description="Get help with LeetGrind bot commands and point system"
+)
+async def help_command(interaction: discord.Interaction):
+    help_text = """
+**LeetGrind Bot Help**
+
+**Points System:**
+- Easy LeetCode problems = 1 point
+- Medium LeetCode problems = 2 points
+- Hard LeetCode problems = 3 points
+
+**Commands:**
+- `/setgoal <points> <days>` - Set a daily points goal for the specified number of days
+- `/getgoal` - View your current goal
+- `/help` - Show this help message
+
+The bot will check your LeetCode progress daily and tag you if you don't meet your goal.
+"""
+    await interaction.response.send_message(help_text)
 
 
 # Start the bot

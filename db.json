@@ -2,11 +2,17 @@
     "spycrab.db": {
         "lc_id": "yangavin",
         "goal": [],
-        "solved": 25
+        "easySolved": 13,
+        "mediumSolved": 12,
+        "hardSolved": 0,
+        "points": 0
     },
     "evanferreira": {
         "lc_id": "EvanFerreira",
         "goal": [],
-        "solved": 9
+        "easySolved": 9,
+        "mediumSolved": 2,
+        "hardSolved": 1,
+        "points": 0
     }
 }
