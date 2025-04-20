@@ -5,6 +5,9 @@ from dotenv import load_dotenv
 import os
 import json
 from datetime import datetime, timedelta
+import argparse
+import sys
+import asyncio
 
 load_dotenv()
 
@@ -13,6 +16,36 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 # Get guild ID from environment variable for instant command updates
 GUILD_ID = int(os.getenv("GUILD_ID", "0"))  # Default to 0 if not found
+
+# Setup command line arguments
+parser = argparse.ArgumentParser(description="LeetGrind Discord Bot")
+parser.add_argument(
+    "--delete", action="store_true", help="Delete all commands and exit"
+)
+args = parser.parse_args()
+
+
+# Function to delete all commands
+async def delete_all_commands():
+    print("Deleting all commands...")
+
+    # Login to Discord first
+    await bot.login(os.getenv("DISCORD_TOKEN"))
+
+    # Delete guild commands if GUILD_ID is available
+    if GUILD_ID:
+        guild = discord.Object(id=GUILD_ID)
+        bot.tree.clear_commands(guild=guild)
+        await bot.tree.sync(guild=guild)
+        print(f"Cleared all commands from guild {GUILD_ID}")
+
+    # Delete global commands - must use None for guild parameter
+    bot.tree.clear_commands(guild=None)
+    await bot.tree.sync()
+    print("Cleared all global commands")
+
+    print("All commands deleted. Exiting.")
+    await bot.close()
 
 
 def get_db():
@@ -34,13 +67,19 @@ async def on_ready():
         if GUILD_ID:
             # For instant command updates, sync to specific guild
             guild = discord.Object(id=GUILD_ID)
+            # Clear all commands for this guild first
+            bot.tree.clear_commands(guild=guild)
             bot.tree.copy_global_to(guild=guild)
             synced = await bot.tree.sync(guild=guild)
-            print(f"Synced {len(synced)} slash commands to guild {GUILD_ID}.")
+            print(
+                f"Refreshed and synced {len(synced)} slash commands to guild {GUILD_ID}."
+            )
         else:
             # Global sync (slower updates)
+            # Clear all global commands first
+            bot.tree.clear_commands(guild=None)
             synced = await bot.tree.sync()
-            print(f"Synced {len(synced)} slash commands globally.")
+            print(f"Refreshed and synced {len(synced)} slash commands globally.")
     except Exception as e:
         print(e)
 
@@ -133,5 +172,10 @@ The bot will check your LeetCode progress daily and tag you if you don't meet yo
     await interaction.response.send_message(help_text)
 
 
-# Start the bot
-bot.run(os.getenv("DISCORD_TOKEN"))
+# Handle command line arguments and start the bot
+if args.delete:
+    # Run the deletion function
+    asyncio.run(delete_all_commands())
+else:
+    # Start the bot normally
+    bot.run(os.getenv("DISCORD_TOKEN"))

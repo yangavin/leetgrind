@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 import os
 import argparse
 from typing import TypedDict, List
+from copy import deepcopy
 
 
 load_dotenv()
@@ -72,7 +73,7 @@ def check_leetcode(update_db: bool):
             fetched_user_data: UserStats = response.json()
 
             if update_db:
-                temp = db.copy()
+                temp = deepcopy(db)
                 temp[username]["easySolved"] = fetched_user_data["easySolved"]
                 temp[username]["mediumSolved"] = fetched_user_data["mediumSolved"]
                 temp[username]["hardSolved"] = fetched_user_data["hardSolved"]
