@@ -14,8 +14,14 @@ load_dotenv()
 intents = discord.Intents.default()
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# Get guild ID from environment variable for instant command updates
-GUILD_ID = int(os.getenv("GUILD_ID", "0"))  # Default to 0 if not found
+# Get guild ID from environment variable - now required
+GUILD_ID = os.getenv("GUILD_ID")
+if not GUILD_ID:
+    print("Error: GUILD_ID environment variable is required")
+    sys.exit(1)
+
+# Convert to int after validation
+GUILD_ID = int(GUILD_ID)
 
 # Setup command line arguments
 parser = argparse.ArgumentParser(description="LeetGrind Discord Bot")
@@ -32,17 +38,11 @@ async def delete_all_commands():
     # Login to Discord first
     await bot.login(os.getenv("DISCORD_TOKEN"))
 
-    # Delete guild commands if GUILD_ID is available
-    if GUILD_ID:
-        guild = discord.Object(id=GUILD_ID)
-        bot.tree.clear_commands(guild=guild)
-        await bot.tree.sync(guild=guild)
-        print(f"Cleared all commands from guild {GUILD_ID}")
-
-    # Delete global commands - must use None for guild parameter
-    bot.tree.clear_commands(guild=None)
-    await bot.tree.sync()
-    print("Cleared all global commands")
+    # Delete guild commands
+    guild = discord.Object(id=GUILD_ID)
+    bot.tree.clear_commands(guild=guild)
+    await bot.tree.sync(guild=guild)
+    print(f"Cleared all commands from guild {GUILD_ID}")
 
     print("All commands deleted. Exiting.")
     await bot.close()
@@ -64,22 +64,13 @@ def save_db(db):
 async def on_ready():
     print(f"Logged in as {bot.user}")
     try:
-        if GUILD_ID:
-            # For instant command updates, sync to specific guild
-            guild = discord.Object(id=GUILD_ID)
-            # Clear all commands for this guild first
-            bot.tree.clear_commands(guild=guild)
-            bot.tree.copy_global_to(guild=guild)
-            synced = await bot.tree.sync(guild=guild)
-            print(
-                f"Refreshed and synced {len(synced)} slash commands to guild {GUILD_ID}."
-            )
-        else:
-            # Global sync (slower updates)
-            # Clear all global commands first
-            bot.tree.clear_commands(guild=None)
-            synced = await bot.tree.sync()
-            print(f"Refreshed and synced {len(synced)} slash commands globally.")
+        # For guild-specific command updates
+        guild = discord.Object(id=GUILD_ID)
+        # Clear all commands for this guild first
+        bot.tree.clear_commands(guild=guild)
+        bot.tree.copy_global_to(guild=guild)
+        synced = await bot.tree.sync(guild=guild)
+        print(f"Refreshed and synced {len(synced)} slash commands to guild {GUILD_ID}.")
     except Exception as e:
         print(e)
 
