@@ -43,12 +43,14 @@ class UserStats(TypedDict):
 
 
 def get_db():
-    with open("db.json", "r") as f:
+    db_path = os.path.join(os.path.dirname(__file__), "db.json")
+    with open(db_path, "r") as f:
         return json.load(f)
 
 
 def save_db(db):
-    with open("db.json", "w") as f:
+    db_path = os.path.join(os.path.dirname(__file__), "db.json")
+    with open(db_path, "w") as f:
         json.dump(db, f, indent=4)
 
 
@@ -83,6 +85,7 @@ def check_leetcode(update_db: bool):
             # Check if goal is not active
             if not db_user_data["goal"] or len(db_user_data["goal"]) < 2:
                 # Skip users with empty or incomplete goal lists
+                print(f"Skipping {username} because goal is not active")
                 continue
 
             goal_end_date = db_user_data["goal"][1]
@@ -93,7 +96,7 @@ def check_leetcode(update_db: bool):
 
             # Calculate points gained since last check
             points_gained = current_points - previous_points
-
+            print(f"{username} has gained {points_gained} points")
             if points_gained < daily_goal:
                 # User hasn't met their point goal
                 users_to_tag.append((username, daily_goal))
