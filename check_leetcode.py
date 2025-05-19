@@ -6,7 +6,7 @@ from discord.ext import commands
 from dotenv import load_dotenv
 import os
 import argparse
-from typing import TypedDict, List
+from typing import TypedDict, List, Dict, Tuple
 from copy import deepcopy
 
 
@@ -54,6 +54,55 @@ def save_db(db):
         json.dump(db, f, indent=4)
 
 
+def initialize_weekly_points(db: Dict) -> Dict:
+    """Initialize weekly_points for users who don't have it."""
+    for username in db:
+        if "weekly_points" not in db[username]:
+            db[username]["weekly_points"] = 0
+    return db
+
+
+def reset_weekly_points(db: Dict) -> Dict:
+    """Reset weekly points for all users."""
+    for username in db:
+        db[username]["weekly_points"] = 0
+    return db
+
+
+def get_weekly_leaderboard(db: Dict) -> List[Tuple[str, int]]:
+    """Get sorted list of users and their weekly points."""
+    leaderboard = [(username, data["weekly_points"]) for username, data in db.items()]
+    return sorted(leaderboard, key=lambda x: x[1], reverse=True)
+
+
+def format_leaderboard_message(leaderboard: List[Tuple[str, int]], guild) -> str:
+    """Format the leaderboard message for Discord."""
+    if not leaderboard:
+        return "No points scored this week!"
+
+    message = "# 🏆 Leaderboard 🏆\n"
+
+    # Add users with points
+    for i, (username, points) in enumerate(leaderboard, 1):
+        if points > 0:
+            member = discord.utils.get(guild.members, name=username)
+            mention = f"<@{member.id}>" if member else username
+            message += f"{i}. {mention} - `{points} pts`\n"
+
+    # Add users with 0 points
+    zero_point_users = [username for username, points in leaderboard if points == 0]
+    if zero_point_users:
+        message += "\n0 points and will forever be unemployed:\n"
+        mentions = []
+        for username in zero_point_users:
+            member = discord.utils.get(guild.members, name=username)
+            mention = f"<@{member.id}>" if member else username
+            mentions.append(mention)
+        message += " ".join(mentions)
+
+    return message
+
+
 def calculate_points(stats: UserStats) -> int:
     return (
         stats["easySolved"] * problem_scale["easy"]
@@ -64,8 +113,22 @@ def calculate_points(stats: UserStats) -> int:
 
 def check_leetcode(update_db: bool):
     db = get_db()
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = datetime.now()
+    is_monday = today.weekday() == 0  # 0 is Monday
     users_to_tag = []
+
+    # Initialize weekly_points if needed
+    db = initialize_weekly_points(db)
+
+    # If it's Monday, announce leaderboard and reset points
+    if is_monday:
+        leaderboard = get_weekly_leaderboard(db)
+        channel = bot.get_channel(CHANNEL_ID)
+        if channel:
+            message = format_leaderboard_message(leaderboard, channel.guild)
+            bot.loop.create_task(channel.send(message))
+        db = reset_weekly_points(db)
+        save_db(db)
 
     for username, db_user_data in db.items():
         try:
@@ -80,6 +143,13 @@ def check_leetcode(update_db: bool):
                 temp[username]["mediumSolved"] = fetched_user_data["mediumSolved"]
                 temp[username]["hardSolved"] = fetched_user_data["hardSolved"]
                 temp[username]["points"] = calculate_points(fetched_user_data)
+
+                # Update weekly points
+                previous_points = db_user_data.get("points", 0)
+                current_points = calculate_points(fetched_user_data)
+                points_gained = current_points - previous_points
+                temp[username]["weekly_points"] += points_gained
+
                 save_db(temp)
 
             # Check if goal is not active
@@ -102,7 +172,7 @@ def check_leetcode(update_db: bool):
                 users_to_tag.append((username, daily_goal))
 
             # If the goal is over, set the goal to an empty array
-            if today > goal_end_date:
+            if today.strftime("%Y-%m-%d") > goal_end_date:
                 db[username]["goal"] = []
 
         except Exception as e:
