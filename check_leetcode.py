@@ -161,6 +161,12 @@ def check_leetcode(update_db: bool):
             goal_end_date = db_user_data["goal"][1]
             daily_goal = db_user_data["goal"][0]
 
+            # Check if the goal is expired before checking daily progress
+            if today.strftime("%Y-%m-%d") > goal_end_date:
+                print(f"Skipping {username} because goal is expired")
+                db[username]["goal"] = []
+                continue
+
             previous_points = db_user_data.get("points", 0)
             current_points = calculate_points(fetched_user_data)
 
@@ -170,10 +176,6 @@ def check_leetcode(update_db: bool):
             if points_gained < daily_goal:
                 # User hasn't met their point goal
                 users_to_tag.append((username, daily_goal))
-
-            # If the goal is over, set the goal to an empty array
-            if today.strftime("%Y-%m-%d") > goal_end_date:
-                db[username]["goal"] = []
 
         except Exception as e:
             print(f"Error checking progress for {username}: {e}")
