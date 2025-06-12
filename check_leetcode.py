@@ -15,7 +15,7 @@ LEETCODE_API_URL = os.getenv("LEETCODE_API_URL")
 
 async def execute_bot_logic(discord_bot: DiscordBot):
     """Execute the main bot logic."""
-    service = LeetCodeService(LEETCODE_API_URL)
+    service = LeetCodeService(LEETCODE_API_URL, "db.json")
     users_to_tag, leaderboard, is_monday = service.check_and_update_progress(
         update_db=True
     )
@@ -39,7 +39,7 @@ def main():
 
     if args.print:
         # Print mode - just show who would be tagged
-        service = LeetCodeService(LEETCODE_API_URL)
+        service = LeetCodeService(LEETCODE_API_URL, "db.json")
         users_to_tag, leaderboard, is_monday = service.check_and_update_progress(
             update_db=False
         )
