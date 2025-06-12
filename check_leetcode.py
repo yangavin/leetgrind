@@ -11,11 +11,12 @@ load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 CHANNEL_ID = int(os.getenv("CHANNEL_ID", "0").split()[0])
 LEETCODE_API_URL = os.getenv("LEETCODE_API_URL")
+DB_PATH = os.path.join(os.path.dirname(__file__), "db.json")
 
 
 async def execute_bot_logic(discord_bot: DiscordBot):
     """Execute the main bot logic."""
-    service = LeetCodeService(LEETCODE_API_URL, "db.json")
+    service = LeetCodeService(LEETCODE_API_URL, DB_PATH)
     users_to_tag, leaderboard, is_monday = service.check_and_update_progress(
         update_db=True
     )
@@ -39,7 +40,7 @@ def main():
 
     if args.print:
         # Print mode - just show who would be tagged
-        service = LeetCodeService(LEETCODE_API_URL, "db.json")
+        service = LeetCodeService(LEETCODE_API_URL, DB_PATH)
         users_to_tag, leaderboard, is_monday = service.check_and_update_progress(
             update_db=False
         )
